@@ -64,10 +64,10 @@ class Medium {
         mimeType = json["mimeType"],
         duration = json['duration'] ?? 0,
         creationDate = json['creationDate'] != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['creationDate'])
+            ? _checkDate(json['creationDate'])
             : null,
         modifiedDate = json['modifiedDate'] != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['modifiedDate'])
+            ? _checkDate(json['modifiedDate'])
             : null;
 
   static Medium fromMap(Map map) {
@@ -83,6 +83,14 @@ class Medium {
       creationDate: map['creationDate'],
       modifiedDate: map['modifiedDate'],
     );
+  }
+
+  static DateTime? _checkDate(int dateMS) {
+    try {
+      return DateTime.fromMillisecondsSinceEpoch(dateMS);
+    } catch (ex) {
+      return null;
+    }
   }
 
   Map toMap() {
