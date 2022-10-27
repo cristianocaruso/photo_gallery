@@ -382,7 +382,7 @@ public class SwiftPhotoGalleryPlugin: NSObject, FlutterPlugin {
         manager.requestAVAsset(forVideo: asset, options: options, resultHandler: { (avAsset, avAudioMix, info) in
           DispatchQueue.main.async(execute: {
             do {
-              let avAsset = avAsset as? AVURLAsset
+              let avAssetURL = avAsset as? AVURLAsset
               if (avAssetURL == nil) {
                 // slow-motion video
 		            guard let exportSession = AVAssetExportSession(asset: avAsset!, presetName: AVAssetExportPresetMediumQuality) else {
@@ -401,7 +401,7 @@ public class SwiftPhotoGalleryPlugin: NSObject, FlutterPlugin {
                   completion(filepath, nil)      
                 }
               }else{
-                let data = try Data(contentsOf: avAsset!.url)
+                let data = try Data(contentsOf: avAssetURL!.url)
                 let fileExt = self.extractFileExtensionFromAsset(asset: asset)
                 let filepath = self.exportPathForAsset(asset: asset, ext: fileExt)
                 try! data.write(to: filepath, options: .atomic)
