@@ -383,11 +383,30 @@ public class SwiftPhotoGalleryPlugin: NSObject, FlutterPlugin {
           DispatchQueue.main.async(execute: {
             do {
               let avAsset = avAsset as? AVURLAsset
-              let data = try Data(contentsOf: avAsset!.url)
-              let fileExt = self.extractFileExtensionFromAsset(asset: asset)
-              let filepath = self.exportPathForAsset(asset: asset, ext: fileExt)
-              try! data.write(to: filepath, options: .atomic)
-              completion(filepath.absoluteString, nil)
+              if (avAssetURL == nil) {
+                // slow-motion video
+		            guard let exportSession = AVAssetExportSession(asset: avAsset!, presetName: AVAssetExportPresetMediumQuality) else {
+		            //Log.error?.message("Could not create AVAssetExportSession")
+		              return
+		            }
+                let directory = NSTemporaryDirectory()
+                let fileName = NSUUID().uuidString + ".mp4"
+                let targetURL = NSURL.fileURL(withPathComponents: [directory, fileName])
+		            exportSession.outputURL = targetURL
+		            exportSession.outputFileType = AVFileType.mp4
+		            exportSession.shouldOptimizeForNetworkUse = true
+                exportSession.exportAsynchronously {
+		              let exportedAsset = AVURLAsset(url: targetURL!)
+                  let filepath = self.processVideoAsset( asset: asset, assetURL: exportedAsset)
+                  completion(filepath, nil)      
+                }
+              }else{
+                let data = try Data(contentsOf: avAsset!.url)
+                let fileExt = self.extractFileExtensionFromAsset(asset: asset)
+                let filepath = self.exportPathForAsset(asset: asset, ext: fileExt)
+                try! data.write(to: filepath, options: .atomic)
+                completion(filepath.absoluteString, nil)
+              }
             } catch {
               completion(nil, NSError(domain: "photo_gallery", code: 500, userInfo: nil))
             }
@@ -398,6 +417,18 @@ public class SwiftPhotoGalleryPlugin: NSObject, FlutterPlugin {
     }
   }
   
+private func processVideoAsset(asset: PHAsset, assetURL: AVURLAsset) -> String?{
+    do {
+      let data = try Data(contentsOf: assetURL.url)
+      let fileExt = self.extractFileExtensionFromAsset(asset: asset)
+      let filepath = self.exportPathForAsset(asset: asset, ext: fileExt)
+      try! data.write(to: filepath, options: .atomic)
+      return filepath.absoluteString
+    } catch {
+      return nil
+    }
+  }
+
   private func cacheImage(asset: PHAsset, data: Data, mimeType: String) -> String? {
     if mimeType == "image/jpeg" {
       let filepath = self.exportPathForAsset(asset: asset, ext: ".jpeg")
